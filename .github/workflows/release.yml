@@ -60,28 +60,17 @@ jobs:
       - name: Gate
         run: npm run gate
 
-      # TEMPORARY, and it comes out again the moment 0.1.0 is on the registry.
+      # No token. The runner proves its identity to the registry over OIDC and
+      # gets a short-lived, signed one per publish — there is nothing here to
+      # store, rotate or leak.
       #
-      # Trusted publishing cannot be switched on for a package that does not
-      # exist yet: npm's own instruction is "navigate to your package settings",
-      # and there are no settings until something has been published. A granular
-      # token cannot be scoped to an unpublished name either. So the first
-      # version is pushed with a token and every later one is not.
-      #
-      # --provenance keeps that first version honest anyway: the attestation is
-      # signed with the runner's OIDC identity, not with the token, so 0.1.0
-      # carries the same link back to this repository as its siblings do.
-      #
-      # After it lands: set the Trusted Publisher on npmjs.com, delete the
-      # NPM_TOKEN secret, and revert this step to a bare `npm publish`.
+      # 0.1.0 could not go this way: trusted publishing cannot be configured for
+      # a package that does not exist, and npm has no settings page for a name
+      # it has never seen. That one version went up with a granular token
+      # carrying Bypass 2FA, which npm itself warns about and recommends
+      # replacing with exactly this. It has been revoked.
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        # --access public is only needed the first time: npm treats a name that
-        # has never been published as private until told otherwise, and refuses
-        # to attach provenance to something it thinks is private. Once the
-        # package exists it is public and the flag is redundant.
-        run: npm publish --provenance --access public
+        run: npm publish
 
       # A tag alone is invisible on the repo page: GitHub only shows a Release.
       # Create one from the tag so the published version is discoverable from
