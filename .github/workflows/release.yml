@@ -60,8 +60,24 @@ jobs:
       - name: Gate
         run: npm run gate
 
+      # TEMPORARY, and it comes out again the moment 0.1.0 is on the registry.
+      #
+      # Trusted publishing cannot be switched on for a package that does not
+      # exist yet: npm's own instruction is "navigate to your package settings",
+      # and there are no settings until something has been published. A granular
+      # token cannot be scoped to an unpublished name either. So the first
+      # version is pushed with a token and every later one is not.
+      #
+      # --provenance keeps that first version honest anyway: the attestation is
+      # signed with the runner's OIDC identity, not with the token, so 0.1.0
+      # carries the same link back to this repository as its siblings do.
+      #
+      # After it lands: set the Trusted Publisher on npmjs.com, delete the
+      # NPM_TOKEN secret, and revert this step to a bare `npm publish`.
       - name: Publish
-        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance
 
       # A tag alone is invisible on the repo page: GitHub only shows a Release.
       # Create one from the tag so the published version is discoverable from
