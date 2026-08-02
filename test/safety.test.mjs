@@ -101,6 +101,19 @@ describe('it says when it cannot know', () => {
     assert.match(raw, /ebill_open/, 'never named the way out');
   });
 
+  test('a window that is already up is not opened a second time', async () => {
+    // The test browser is listening on the CDP endpoint this server was given,
+    // which is exactly the state a second ebill_open call finds after a real
+    // login. Launching again would put a fresh window in front of the one
+    // holding the session, and the session is the thing that took a human.
+    const { data, isError } = await srv.call('ebill_open', { url: 'https://example.invalid/login' });
+    assert.ok(!isError, JSON.stringify(data));
+    assert.equal(data.already_open, true, JSON.stringify(data));
+    // And nothing was launched: the window still answers, and it is the same one.
+    const { data: st } = await srv.call('ebill_status');
+    assert.equal(st.session, 'reachable');
+  });
+
   test('ebill_open refuses to guess a bank, and refuses a plain-http one', async () => {
     // EBILL_BANK_URL is set-and-empty in the harness, which is how "there is no
     // bank here" is said. Guessing one would open somebody's login page.

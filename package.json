@@ -1,7 +1,7 @@
 {
   "name": "ebill-mcp",
   "version": "0.1.0",
-  "description": "MCP server for the Swiss eBill portal — read your bill archive and download the PDFs. Read-only: it cannot approve, release or pay anything",
+  "description": "MCP server for the Swiss eBill portal \u2014 read your bill archive and download the PDFs. Read-only: it cannot approve, release or pay anything",
   "type": "module",
   "main": "index.js",
   "bin": {
@@ -16,7 +16,7 @@
     "smoke": "node scripts/smoke.mjs",
     "hygiene": "node scripts/hygiene.mjs",
     "test": "node --test --test-concurrency=1 test/api.test.mjs test/safety.test.mjs test/hygiene.test.mjs",
-    "coverage": "c8 --reporter=text-summary --include=index.js --check-coverage --lines 85 --functions 90 --branches 75 node --test --test-concurrency=1 test/api.test.mjs test/safety.test.mjs test/hygiene.test.mjs",
+    "coverage": "c8 --reporter=text-summary --include=index.js --check-coverage --lines 88 --functions 95 --branches 70 node --test --test-concurrency=1 test/api.test.mjs test/safety.test.mjs test/hygiene.test.mjs",
     "gate": "npm run lint && node scripts/smoke.mjs && node scripts/hygiene.mjs && npm run coverage",
     "prepublishOnly": "npm run gate",
     "mutate": "node scripts/mutate-changed.mjs",

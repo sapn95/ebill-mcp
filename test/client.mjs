@@ -30,7 +30,6 @@ export async function startServer(env = {}, { timeout = 30000 } = {}) {
   });
   let stderr = '';
   child.stderr.on('data', d => { stderr += d.toString(); });
-  const exited = new Promise(resolve => { child.on('exit', code => resolve(code)); });
 
   const pending = new Map();
   let id = 1;
@@ -68,6 +67,18 @@ export async function startServer(env = {}, { timeout = 30000 } = {}) {
       try { data = JSON.parse(raw); } catch { data = null; }
       return { raw, data, isError: !!m.result?.isError || !!m.error };
     },
-    stop: async () => { child.kill(); await exited; },
+    // Close stdin and let the server exit on its own. Killed outright it never
+    // flushes its V8 coverage, and the whole run then reports 0/0 for a file
+    // every test touched — which is how a coverage floor stops meaning
+    // anything. The kill is the backstop, not the plan.
+    stop() {
+      child.stdin.end();
+      return new Promise(resolve => {
+        if (child.exitCode !== null || child.signalCode !== null) return resolve();
+        const t = setTimeout(() => { child.kill(); resolve(); }, 5000);
+        t.unref();
+        child.once('exit', () => { clearTimeout(t); resolve(); });
+      });
+    },
   };
 }
