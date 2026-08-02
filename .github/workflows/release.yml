@@ -50,6 +50,13 @@ jobs:
           pkg="$(node -p 'require("./package.json").version')"
           test "$tag" = "$pkg" || { echo "tag $tag != package.json $pkg"; exit 1; }
 
+      # The suite attaches to a real Chromium holding a local fixture, so the
+      # browser has to be here before the gate runs. Left out, every test is
+      # cancelled and the failure reads like a broken test rather than a
+      # missing dependency.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
       - name: Gate
         run: npm run gate
 
