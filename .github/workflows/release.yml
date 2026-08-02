@@ -1,0 +1,75 @@
+name: Release
+
+# Publishing uses npm Trusted Publishing (OIDC): the runner proves its identity
+# to the registry and gets a short-lived, signed token per publish. There is no
+# npm token anywhere — nothing to store, rotate, or leak. npm itself recommends
+# this over an automation token, because a "bypass 2FA" token is a standing key
+# to every package it covers.
+#
+# Configure once per package on npmjs.com → Settings → Trusted Publisher:
+#   Organization or user: sapn95
+#   Repository:           <this repo>
+#   Workflow filename:    release.yml
+#   Allowed actions:      npm publish
+#
+# Then release with:  npm version patch && git push --follow-tags
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write        # to publish the GitHub Release for the tag
+  id-token: write        # lets the runner mint the OIDC token npm verifies
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'          # trusted publishing needs >= 22.14
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # Trusted publishing needs npm >= 11.5.1; the bundled npm may be older.
+      - name: Ensure a recent npm
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      - run: npm ci --ignore-scripts
+
+      # Refuse to publish a tag whose version does not match package.json —
+      # a tag and a published version that disagree can never be reconciled.
+      - name: Tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p 'require("./package.json").version')"
+          test "$tag" = "$pkg" || { echo "tag $tag != package.json $pkg"; exit 1; }
+
+      - name: Gate
+        run: npm run gate
+
+      - name: Publish
+        run: npm publish
+
+      # A tag alone is invisible on the repo page: GitHub only shows a Release.
+      # Create one from the tag so the published version is discoverable from
+      # GitHub as well as from the registry, rather than only in npm.
+      - name: GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && exit 0
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --latest \
+            --notes-start-tag "$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || echo '')" \
+            || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --latest
+          echo "https://www.npmjs.com/package/$(node -p 'require("./package.json").name')/v/$version" >> "$GITHUB_STEP_SUMMARY"

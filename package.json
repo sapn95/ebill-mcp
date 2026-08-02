@@ -1,0 +1,54 @@
+{
+  "name": "ebill-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the Swiss eBill portal — read your bill archive and download the PDFs. Read-only: it cannot approve, release or pay anything",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "ebill-mcp": "index.js"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "lint": "eslint .",
+    "smoke": "node scripts/smoke.mjs",
+    "hygiene": "node scripts/hygiene.mjs",
+    "test": "node --test --test-concurrency=1 test/api.test.mjs test/safety.test.mjs test/hygiene.test.mjs",
+    "coverage": "c8 --reporter=text-summary --include=index.js --check-coverage --lines 85 --functions 90 --branches 75 node --test --test-concurrency=1 test/api.test.mjs test/safety.test.mjs test/hygiene.test.mjs",
+    "gate": "npm run lint && node scripts/smoke.mjs && node scripts/hygiene.mjs && npm run coverage",
+    "prepublishOnly": "npm run gate",
+    "mutate": "node scripts/mutate-changed.mjs",
+    "mutate:all": "stryker run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "playwright": "^1.58.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^9.6.1",
+    "c8": "^12.0.0",
+    "eslint": "^10.8.0",
+    "globals": "^17.8.0"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ebill",
+    "switzerland",
+    "invoices",
+    "claude"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sapn95/ebill-mcp.git"
+  }
+}

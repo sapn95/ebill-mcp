@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Syntax
+        run: node --check index.js
+
+      - name: Lint
+        run: npm run lint
+
+      # Protocol handshake + tool-schema validation. Offline: no network, no
+      # credentials, so it is safe on a public runner.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test
+        run: npm run smoke
+
+      - name: Hygiene (secrets, personal data, tracked state files)
+        run: npm run hygiene
+
+      # The suites drive the server over stdio, attached to a throwaway Chromium
+      # that is holding a local fixture open. They never reach a bank: the portal
+      # origin is 127.0.0.1, the CDP endpoint is a browser this job launched, and
+      # the e-banking URL is set to empty. Fails below 85% lines / 90% functions.
+      - name: Tests + coverage
+        run: npm run coverage
+
+      - name: Audit
+        run: npm audit --audit-level=high
+        continue-on-error: true

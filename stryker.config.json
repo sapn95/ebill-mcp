@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing answers the question the review rounds keep asking by hand: if this guard were removed, would anything notice? On the sibling pingen-mcp a full pass found eleven defects that eleven model rounds had not.",
+  "scope_comment": "Scoped runs only \u2014 see scripts/mutate-changed.mjs. This suite attaches to a real Chromium, so a whole-file pass costs hours where the browser-free sibling costs minutes. A review round needs the lines it just wrote proved, not the whole file.",
+  "packageManager": "npm",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "node --test --test-concurrency=1 test/api.test.mjs test/safety.test.mjs"
+  },
+  "runner_comment": "The command runner, not tap: the tests drive the server as a separate stdio child, so an in-process mutant switch never reaches the code under test and every mutant comes back NoCoverage. Hygiene is left out \u2014 it reads tracked files, so a mutant in index.js cannot change its result.",
+  "mutate": [
+    "index.js"
+  ],
+  "coverageAnalysis": "off",
+  "incremental": false,
+  "incremental_comment": "Off, and it has to be. Reuse is decided per mutant from which tests killed it, and the command runner reports the whole suite as ONE synthetic test whose identity never changes \u2014 so any test edit is invisible and the run replays old numbers.",
+  "timeoutMS": 30000,
+  "timeout_comment": "Watch the timeout count, not the score, when changing this or concurrency. Stryker counts a timeout as detected, which scores exactly like a kill, so an allowance too tight for the machine records merely slow mutants as caught and the score inflates.",
+  "concurrency": 3,
+  "concurrency_comment": "Three, not twelve. This suite launches a real Chromium per runner, and several of them against one another is the arrangement that fails in ways that go away when a file is run alone \u2014 here that is a mutant marked killed by a flake.",
+  "reporters": [
+    "clear-text",
+    "json"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 70,
+    "break": null
+  }
+}
