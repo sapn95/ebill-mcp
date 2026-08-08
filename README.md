@@ -175,9 +175,11 @@ filing these, the printed date is usually the one you want.
 
 ## Checks
 
-    npm run gate      # lint + smoke + hygiene + tests with coverage enforced
-    npm test          # just the tests
-    npm run mutate    # mutation-test the lines this branch changed
+```bash
+npm run gate      # lint + smoke + hygiene + tests with coverage enforced
+npm test          # just the tests
+npm run mutate    # mutation-test the lines this branch changed
+```
 
 Runs offline and without a bank: the suites attach to a throwaway Chromium
 holding a local fixture, so nothing they do can reach a real account.
